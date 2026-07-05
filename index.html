@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,minimal-ui">
+<title>SHIVERIA · LAITON ecosystem</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#a0a5b1;font-family:'IBM Plex Mono',monospace;cursor:default}
+canvas{display:block}
+#loader{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#a0a5b1;transition:opacity .8s;pointer-events:none}
+#loader.h{opacity:0}
+#loader .i{font-size:40px;color:rgba(255,255,255,.03);margin-bottom:8px;animation:pulse 2s ease-in-out infinite}
+#loader .n{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:8px;text-transform:uppercase;color:rgba(0,0,0,.15)}
+#loader .n span{color:rgba(0,0,0,.2)}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.03}50%{transform:scale(1.1);opacity:.08}}
+#title{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none;text-align:center}
+#title h1{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:12px;color:rgba(0,0,0,.12);text-transform:uppercase}
+#title span{color:rgba(0,0,0,.18);letter-spacing:3px}
+#controls{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none;text-align:center}
+#controls .k{display:inline-block;border:1px solid rgba(0,0,0,.06);padding:4px 8px;margin:0 2px;color:rgba(0,0,0,.1);font-size:7px;letter-spacing:2px;font-family:'IBM Plex Mono',monospace}
+#controls .d{color:rgba(0,0,0,.06);font-size:6px;letter-spacing:2px;margin-top:6px;font-family:'IBM Plex Mono',monospace}
+#music-info{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none;text-align:center;opacity:0;transition:opacity 1s}
+#music-info.s{opacity:1}
+#music-info .t{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:3px;color:rgba(0,0,0,.12)}
+#music-info .s{font-family:'IBM Plex Mono',monospace;font-size:6px;letter-spacing:2px;color:rgba(0,0,0,.06);margin-top:2px}
+#status{position:fixed;bottom:24px;right:24px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:5px;color:rgba(0,0,0,.04);letter-spacing:2px;pointer-events:none}
+#eco{position:fixed;bottom:24px;left:24px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:5px;color:rgba(0,0,0,.04);letter-spacing:3px;pointer-events:none;text-transform:uppercase}
+#secret{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);z-index:3;text-align:center;opacity:0;transition:opacity .6s;pointer-events:none;font-family:'Inter',sans-serif}
+#secret.s{opacity:1}
+#secret .t{color:#fff;font-size:10px;font-weight:200;letter-spacing:3px;text-shadow:0 0 30px rgba(100,180,255,.1)}
+#secret .h{color:rgba(100,180,255,.15);font-size:7px;font-weight:200;letter-spacing:3px;margin-top:4px}
+</style>
+</head>
+<body>
+<div id="loader"><div class="i">⬡</div><div class="n"><span>✦</span> SHIVERIA <span>✦</span></div></div>
+<div id="title"><h1>SHIVERIA <span>· LAITON ecosystem</span></h1></div>
+<div id="music-info"><div class="t">♪ Shiveria Snowscape</div><div class="s">Super Mario Odyssey</div></div>
+<div id="controls">
+  <div><span class="k">W A S D</span> <span class="k">MOUSE</span> <span class="k">E</span></div>
+  <div class="d">move · look · discover</div>
+</div>
+<div id="secret"><div class="t" id="st"></div><div class="h" id="sh"></div></div>
+<div id="eco">LAITON GROUP ✦ ECOSYSTEM</div>
+<div id="status">⬡</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x050510);scene.fog=new THREE.FogExp2(0x050510,.003)
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,200);camera.position.set(0,3,10)
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.5
+document.body.prepend(renderer.domElement)
+
+scene.add(new THREE.AmbientLight(0x335577,.1))
+const hem=new THREE.HemisphereLight(0x6677aa,0x112233,.15);scene.add(hem)
+const mo=new THREE.DirectionalLight(0x99bbff,.35);mo.position.set(-8,12,-4);mo.castShadow=true;mo.shadow.mapSize.set(1024,1024);scene.add(mo)
+scene.add(new THREE.DirectionalLight(0x4466aa,.06).position.set(5,-5,8))
+
+const world=new THREE.Group();scene.add(world)
+const keys={},secrets=[],clock=new THREE.Clock()
+let yaw=0,pitch=0,ml=false,found=0,time=0,mx=0,my=0
+
+// ─── Ground ───
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0x0a0a1a,roughness:.8,metalness:.5,transparent:true,opacity:.5}))
+gnd.rotation.x=-Math.PI/2;gnd.position.y=-.2;gnd.receiveShadow=true;world.add(gnd)
+
+// ─── Frozen lake ───
+const lake=new THREE.Mesh(new THREE.CircleGeometry(18,48),new THREE.MeshPhysicalMaterial({color:0x1a2a44,roughness:.1,metalness:.8,transparent:true,opacity:.3,clearcoat:.5}))
+lake.rotation.x=-Math.PI/2;lake.position.y=-.18;world.add(lake)
+
+// ─── Ice floes ───
+for(let i=0;i<15;i++){
+  const s=.5+Math.random()*3;const m=new THREE.Mesh(new THREE.CylinderGeometry(s,s,.05,6),new THREE.MeshStandardMaterial({color:0x224466,roughness:.2,metalness:.6,transparent:true,opacity:.04+Math.random()*.06}))
+  const a=Math.random()*Math.PI*2,r=2+Math.random()*12;m.position.set(Math.cos(a)*r,-.16,Math.sin(a)*r);m.rotation.y=Math.random()*6;world.add(m)
+}
+
+// ─── Snow covered trees ───
+for(let i=0;i<40;i++){
+  const h=1+Math.random()*4;const g=new THREE.Group()
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(.02,.05,h*.6,4),new THREE.MeshStandardMaterial({color:0x1a1a2e,roughness:.9}))
+  t.position.y=0;g.add(t)
+  const c=new THREE.Mesh(new THREE.ConeGeometry(.2+Math.random()*.3,h*.4,5),new THREE.MeshStandardMaterial({color:0x223355,flatShading:true,roughness:.8,transparent:true,opacity:.1+Math.random()*.1}))
+  c.position.y=h*.6;c.material.color.setHSL(.55+Math.random()*.1,.3,.1+Math.random()*.08);g.add(c)
+  const a=Math.random()*Math.PI*2,r=4+Math.random()*15;g.position.set(Math.cos(a)*r,-.2,Math.sin(a)*r);g.scale.setScalar(.6+Math.random()*.8);world.add(g)
+}
+
+// ─── Ice spikes ───
+for(let i=0;i<50;i++){
+  const h=.3+Math.random()*3;const m=new THREE.Mesh(new THREE.ConeGeometry(.02+.03*Math.random(),h,3+Math.floor(Math.random()*3)),new THREE.MeshPhysicalMaterial({color:0x4488cc,emissive:0x4488cc,emissiveIntensity:.03,transparent:true,opacity:.05+Math.random()*.15,clearcoat:1}))
+  const a=Math.random()*Math.PI*2,r=.5+Math.random()*14;m.position.set(Math.cos(a)*r,-.2+h/2,Math.sin(a)*r);m.rotation.set((Math.random()-.5)*.2,Math.random()*6,(Math.random()-.5)*.2);world.add(m)
+}
+
+// ─── Aurora ───
+for(let i=0;i<25;i++){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(15+Math.random()*30,1+Math.random()*3,1,1),new THREE.MeshBasicMaterial({color:hsl(.55+Math.random()*.2,.5,.1+Math.random()*.1),transparent:true,opacity:.005+Math.random()*.01,depthWrite:false,side:THREE.DoubleSide}))
+  m.position.set((Math.random()-.5)*50,10+Math.random()*8,(Math.random()-.5)*40-10);m.rotation.x=Math.PI/4+(Math.random()-.5)*.5;m.rotation.z=Math.random()*.5
+  m.userData={ph:Math.random()*100};world.add(m)
+}
+
+// ─── Snowflakes ───
+const sc=5000,sp=new Float32Array(sc*3),sv=[]
+for(let i=0;i<sc;i++){sp[i*3]=(Math.random()-.5)*100;sp[i*3+1]=Math.random()*50;sp[i*3+2]=(Math.random()-.5)*100;sv.push({x:(Math.random()-.5)*.008,y:-.015-Math.random()*.03,z:(Math.random()-.5)*.008})}
+const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3))
+const sn=new THREE.Points(sg,new THREE.PointsMaterial({color:0xaaccff,size:.035,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,depthWrite:false}));scene.add(sn)
+
+// ─── Stars ───
+const sta=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute((()=>{const p=new Float32Array(3000*3);for(let i=0;i<3000;i++){const r=100+Math.random()*120,t=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);p[i*3]=Math.sin(ph)*Math.cos(t)*r;p[i*3+1]=Math.sin(ph)*Math.sin(t)*r;p[i*3+2]=Math.cos(ph)*r}return p})(),3)),new THREE.PointsMaterial({color:0xffffff,size:.05,transparent:true,opacity:.15}));scene.add(sta)
+
+// ─── Ice cave (central feature) ───
+for(let ring=0;ring<6;ring++){
+  const r=2.5+ring*.3,y=ring*.4
+  for(let i=0;i<12+ring*2;i++){
+    const a=(i/(12+ring*2))*Math.PI*2
+    const m=new THREE.Mesh(new THREE.TetrahedronGeometry(.05+.03*Math.random()),new THREE.MeshBasicMaterial({color:0x5599cc,wireframe:Math.random()>.5,transparent:true,opacity:.01+ring*.005}))
+    m.position.set(Math.cos(a)*r,y-.5,Math.sin(a)*r);world.add(m)
+  }
+}
+
+// ─── Secret locations ───
+const sData=[
+  {t:'the ice remembers',h:'every frozen moment',p:[8,.5,6]},{t:'crystals are frozen time',h:'patience',p:[-7,.5,-9]},
+  {t:'the lake reflects nothing',h:'look deeper',p:[0,.5,-16]},{t:'snow covers all paths',h:'keep moving',p:[12,.5,-5]},
+  {t:'the cave breathes',h:'listen',p:[-4,.5,11]},{t:'trees dream of spring',h:'in their own time',p:[-12,.5,-12]},
+  {t:'aurora is the sky singing',h:'⬡',p:[6,4,-6]},{t:'cold preserves',h:'what will you keep?',p:[-8,.5,4]},
+  {t:'the spire points nowhere',h:'the journey is the destination',p:[0,2.5,0]},{t:'winter is a cycle',h:'this too will pass',p:[14,.5,8]}
+]
+sData.forEach((d,i)=>{
+  const c=document.createElement('canvas');c.width=512;c.height=128
+  const x=c.getContext('2d');x.font='28px monospace';x.textAlign='center';x.textBaseline='middle'
+  x.shadowColor='#5599cc';x.shadowBlur=20;x.fillStyle='rgba(100,180,255,.1)';x.fillText(d.t,256,64)
+  x.shadowBlur=10;x.fillStyle='rgba(100,180,255,.2)';x.fillText(d.t,256,64)
+  x.shadowBlur=0;x.fillStyle='rgba(255,255,255,.4)';x.fillText(d.t,256,64)
+  const t=new THREE.CanvasTexture(c);t.needsUpdate=true
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}))
+  s.scale.set(1.2,.3,1);s.position.set(d.p[0],d.p[1],d.p[2]);s.userData={idx:i,found:false};world.add(s);secrets.push(s)
+})
+
+// ─── Music ───
+const audio=new Audio('https://raw.githubusercontent.com/Laiton-Group/hub/main/shiveria.mp3')
+audio.loop=true;audio.volume=.25
+const mi=document.getElementById('music-info')
+document.addEventListener('click',()=>{if(!audio.paused)return;audio.play().catch(()=>{});mi.classList.add('s')})
+// Auto-try music after loader
+setTimeout(()=>{audio.play().catch(()=>{});mi.classList.add('s')},2000)
+
+// ─── Controls ───
+document.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='e')checkSecrets()})
+document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false)
+document.addEventListener('mousemove',e=>{mx=((e.clientX/innerWidth)-.5)*2;my=((e.clientY/innerHeight)-.5)*2})
+
+function checkSecrets(){
+  secrets.forEach(s=>{if(s.userData.found)return
+    const d=camera.position.distanceTo(s.position)
+    if(d<2.5){s.userData.found=true;found++
+      document.getElementById('st').textContent=`✦ ${sData[s.userData.idx].t}`
+      document.getElementById('sh').textContent=sData[s.userData.idx].h
+      document.getElementById('secret').classList.add('s')
+      setTimeout(()=>document.getElementById('secret').classList.remove('s'),4000)
+    }
+    if(d<6)s.material.opacity=Math.min(.5,s.material.opacity+((1-d/6)*.5-s.material.opacity)*.05)
+    else if(s.material.opacity>.01)s.material.opacity-=.005
+  })
+}
+
+// ─── Loader ───
+setTimeout(()=>document.getElementById('loader').classList.add('h'),1200)
+
+// ─── Resize ───
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})
+
+// ─── Anim ───
+function anim(t){
+  requestAnimationFrame(anim);time=t*.001
+  // Camera orbit
+  const tx=Math.sin(time*.04)*6,ty=Math.sin(time*.02)*1.5
+  camera.position.x+=(tx-camera.position.x)*.004
+  camera.position.y+=(2.5+ty-camera.position.y)*.004
+  camera.lookAt(0,.5,0)
+  // Snow
+  const sa=sn.geometry.attributes.position.array
+  for(let i=0;i<sc;i++){sa[i*3]+=sv[i].x+Math.sin(time+i)*.002;sa[i*3+1]+=sv[i].y;sa[i*3+2]+=sv[i].z+Math.cos(time*.5+i)*.002
+    if(sa[i*3+1]<-2){sa[i*3+1]=50;sa[i*3]=(Math.random()-.5)*100;sa[i*3+2]=(Math.random()-.5)*100}}
+  sn.geometry.attributes.position.needsUpdate=true
+  // Aurora wave
+  world.children.forEach(c=>{if(c.isMesh&&c.material.opacity&&c.material.opacity<.02&&c.position.y>8){
+    c.position.x+=Math.sin(time*.08+c.userData.ph)*.005;c.position.z+=Math.cos(time*.06+c.userData.ph)*.005}})
+  // Check secrets proximity
+  secrets.forEach(s=>{if(s.userData.found)return;const d=camera.position.distanceTo(s.position);if(d<6)s.material.opacity=Math.min(.5,s.material.opacity+((1-d/6)*.4-s.material.opacity)*.03);else if(s.material.opacity>.01)s.material.opacity-=.003})
+  // Stars
+  sta.material.opacity=.1+Math.sin(time*.3)*.05
+  renderer.render(scene,camera)
+}
+anim()
+</script>
+</body>
+</html>
